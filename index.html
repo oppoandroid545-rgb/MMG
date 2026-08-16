@@ -14,7 +14,9 @@ iframe{position:fixed;top:0;left:0;width:100%;height:100%;border:0;}
 #mmgScanWrap{max-width:480px;margin:0 auto;height:100%;display:flex;flex-direction:column;font-family:Arial,sans-serif;}
 #mmgScanHead{background:#1565C0;color:#fff;padding:12px;font-weight:bold;font-size:14px;display:flex;justify-content:space-between;align-items:center;}
 #mmgScanHead button{border:0;background:transparent;color:#fff;font-size:18px;cursor:pointer;padding:4px 8px;}
-#mmgScanViewer{flex:1;background:#000;}
+#mmgScanViewer{position:relative;flex:1;overflow:hidden;background:#000;}
+#mmgVideo{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;}
+#mmgFrame{position:absolute;top:50%;left:50%;width:min(60vw,240px);height:min(60vw,240px);transform:translate(-50%,-50%);border:2px solid rgba(255,255,255,.95);border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,.45);}
 #mmgScanTip{color:#ccc;text-align:center;padding:10px;font-size:12px;}
 </style>
 </head>
@@ -26,63 +28,80 @@ iframe{position:fixed;top:0;left:0;width:100%;height:100%;border:0;}
   allowfullscreen>
 </iframe>
 
-<!-- === OVERLAY SCANNER LIVE (jalan di halaman induk, kamera diizinkan) === -->
+<!-- === OVERLAY SCANNER LIVE === -->
 <div id="mmgScanOverlay">
   <div id="mmgScanWrap">
     <div id="mmgScanHead">
       <span>📷 SCAN QR KPC (LIVE)</span>
       <button onclick="mmgTutupScan()">✕</button>
     </div>
-    <div id="mmgScanViewer"></div>
-    <div id="mmgScanTip">Arahkan kamera ke QR kode — terbaca otomatis</div>
+    <div id="mmgScanViewer">
+      <video id="mmgVideo" playsinline autoplay muted></video>
+      <div id="mmgFrame"></div>
+    </div>
+    <div id="mmgScanTip">Arahkan QR ke dalam kotak — terbaca otomatis</div>
   </div>
 </div>
 
-<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
-let mmgScanner = null, mmgSource = null, mmgDone = false;
+let mmgStream=null, mmgRaf=null, mmgLast=0, mmgDone=false, mmgSource=null;
+const mmgCanvas=document.createElement("canvas");
 
-window.addEventListener("message", function(ev) {
-  if (!ev.data) return;
-  if (ev.data.type === "DMS_START_SCAN") {
-    mmgSource = ev.source;
-    try { ev.source.postMessage({ type: "DMS_SCAN_READY" }, "*"); } catch (e) {}
+window.addEventListener("message", function(ev){
+  if(!ev.data) return;
+  if(ev.data.type==="DMS_START_SCAN"){
+    mmgSource=ev.source;
+    try{ ev.source.postMessage({type:"DMS_SCAN_READY"},"*"); }catch(e){}
     mmgBukaScan();
   }
 });
 
-function mmgBukaScan() {
-  document.getElementById("mmgScanOverlay").style.display = "block";
-  mmgDone = false;
-  if (typeof Html5Qrcode === "undefined") {
-    document.getElementById("mmgScanTip").textContent = "Library scanner gagal dimuat.";
+function mmgBukaScan(){
+  document.getElementById("mmgScanOverlay").style.display="block";
+  mmgDone=false;
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    document.getElementById("mmgScanTip").textContent="Browser tidak mendukung kamera.";
     return;
   }
-  if (!mmgScanner) mmgScanner = new Html5Qrcode("mmgScanViewer");
-  mmgScanner.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: { width: 220, height: 220 } },
-    function(text) {
-      if (mmgDone) return; mmgDone = true;
-      const t = String(text).trim();
-      if (mmgScanner && mmgScanner.isScanning) {
-        mmgScanner.stop().then(function() { mmgKirim(t); }).catch(function() { mmgKirim(t); });
-      } else mmgKirim(t);
-    },
-    function() {}
-  ).catch(function(err) {
-    document.getElementById("mmgScanTip").textContent = "Kamera tidak bisa dibuka: " + err;
+  navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false})
+  .then(function(stream){
+    mmgStream=stream;
+    const v=document.getElementById("mmgVideo");
+    v.srcObject=stream;
+    v.play();
+    mmgLoop();
+  })
+  .catch(function(err){
+    document.getElementById("mmgScanTip").textContent="Kamera tidak bisa dibuka: "+err;
   });
 }
 
-function mmgKirim(t) {
-  try { if (mmgSource) mmgSource.postMessage({ type: "DMS_KPC_SCAN", text: t }, "*"); } catch (e) {}
+function mmgLoop(){
+  mmgRaf=requestAnimationFrame(mmgLoop);
+  const now=Date.now();
+  if(now-mmgLast<200 || mmgDone) return;
+  mmgLast=now;
+  const v=document.getElementById("mmgVideo");
+  if(!v.videoWidth) return;
+  mmgCanvas.width=v.videoWidth;
+  mmgCanvas.height=v.videoHeight;
+  const ctx=mmgCanvas.getContext("2d");
+  ctx.drawImage(v,0,0,v.videoWidth,v.videoHeight);
+  const code=jsQR(ctx.getImageData(0,0,v.videoWidth,v.videoHeight).data,v.videoWidth,v.videoHeight);
+  if(code&&code.data){ mmgSukses(code.data.trim()); }
+}
+
+function mmgSukses(t){
+  if(mmgDone)return; mmgDone=true;
+  try{ if(mmgSource){ mmgSource.postMessage({type:"DMS_KPC_SCAN",text:t},"*"); } }catch(e){}
   mmgTutupScan();
 }
 
-function mmgTutupScan() {
-  document.getElementById("mmgScanOverlay").style.display = "none";
-  if (mmgScanner && mmgScanner.isScanning) mmgScanner.stop().catch(function() {});
+function mmgTutupScan(){
+  document.getElementById("mmgScanOverlay").style.display="none";
+  if(mmgRaf) cancelAnimationFrame(mmgRaf);
+  if(mmgStream){ mmgStream.getTracks().forEach(function(t){t.stop();}); mmgStream=null; }
 }
 </script>
 </body>
