@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#1565C0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="MENA MENA GROUP">
+<title>MENA MENA GROUP</title>
+<style>
+  /* === BESAR POTONGAN BANNER GOOGLE (ubah angka ini kalau perlu) === */
+  :root { --crop: 64px; }
+
+  html, body {
+    margin:0; padding:0;
+    width:100%; height:100%;
+    background:#1565C0;
+    overflow:hidden;
+  }
+
+  /* === SPLASH SCREEN PROFESIONAL === */
+  #splash {
+    position:fixed; top:0; left:0; right:0; bottom:0;
+    background:#1565C0;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:14px;
+    z-index:5;
+    transition:opacity .4s;
+  }
+  #splash.hide { opacity:0; pointer-events:none; }
+  #splash .logo {
+    width:70px; height:70px; border-radius:18px;
+    background:#fff;
+    display:flex; align-items:center; justify-content:center;
+    font-size:34px; font-weight:bold; color:#1565C0;
+    font-family:Arial, sans-serif;
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+  }
+  #splash .txt {
+    color:#fff; font-family:Arial, sans-serif;
+    font-size:15px; font-weight:bold; letter-spacing:2px;
+  }
+  #splash .sub {
+    color:rgba(255,255,255,.75); font-family:Arial, sans-serif;
+    font-size:11px; letter-spacing:1px; margin-top:-8px;
+  }
+  .spin {
+    width:34px; height:34px;
+    border:4px solid rgba(255,255,255,.3);
+    border-top-color:#fff;
+    border-radius:50%;
+    animation:sp 1s linear infinite;
+  }
+  @keyframes sp { to { transform:rotate(360deg); } }
+
+  /* === BINGKAI APLIKASI: layar penuh, banner Google dipotong === */
+  #frame {
+    position:absolute;
+    left:0; width:100%;
+    top:calc(-1 * var(--crop));
+    height:calc(100% + var(--crop));
+    border:0;
+    background:#fff;
+  }
+</style>
+</head>
+<body>
+
+<!-- Splash saat memuat -->
+<div id="splash">
+  <div class="logo">M</div>
+  <div class="txt">MENA MENA GROUP</div>
+  <div class="sub">SISTEM MANAJEMEN PRODUKSI</div>
+  <div class="spin"></div>
+</div>
+
+<!-- Aplikasi dimuat layar penuh -->
+<iframe id="frame"
+  src="https://script.google.com/macros/s/AKfycbxrcQOZfXduBBgjm3-OnYxYUeo0S2uij75gQr6-6ra8yaV2ua--nl_2l21iZZT7l4Wz/exec"
+  onload="document.getElementById('splash').classList.add('hide')"
+  allow="camera; fullscreen">
+</iframe>
+
+<script>
+  /* =====================================================
+     KUNCI TOMBOL BACK — LEVEL ATAS (100% MANJUR)
+     Karena app.html berada di paling atas (bukan di dalam
+     bingkai Google), kunci ini bekerja di semua HP/tablet.
+     ===================================================== */
+  (function () {
+    var tahan = function () {
+      try { history.pushState(null, document.title, location.href); } catch (e) {}
+    };
+    // cadangan 2 lapis
+    tahan();
+    setTimeout(tahan, 50);
+
+    // setiap back ditekan → isi ulang riwayat → tetap di aplikasi
+    window.addEventListener("popstate", function () {
+      tahan();
+      setTimeout(tahan, 50);
+    });
+    window.addEventListener("hashchange", function () { tahan(); });
+  })();
+
+  // sembunyikan splash otomatis kalau onload lambat
+  setTimeout(function () {
+    document.getElementById("splash").classList.add("hide");
+  }, 6000);
+</script>
+
+</body>
+</html>
