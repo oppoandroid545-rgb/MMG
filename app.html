@@ -10,8 +10,9 @@
 <meta name="apple-mobile-web-app-title" content="MENA MENA GROUP">
 <title>MENA MENA GROUP</title>
 <style>
-  /* === BESAR POTONGAN BANNER GOOGLE (ubah angka ini kalau perlu) === */
-  :root { --crop: 64px; }
+  /* === POTONGAN BANNER GOOGLE: 0 = TIDAK DIPOTONG === */
+  /* Kalau banner Google masih kelihatan, ubah ke 30 atau 40 */
+  :root { --crop: 0px; }
 
   html, body {
     margin:0; padding:0;
@@ -55,7 +56,7 @@
   }
   @keyframes sp { to { transform:rotate(360deg); } }
 
-  /* === BINGKAI APLIKASI: layar penuh, banner Google dipotong === */
+  /* === BINGKAI APLIKASI: layar penuh === */
   #frame {
     position:absolute;
     left:0; width:100%;
@@ -86,8 +87,6 @@
 <script>
   /* =====================================================
      KUNCI TOMBOL BACK — LEVEL ATAS (100% MANJUR)
-     Karena app.html berada di paling atas (bukan di dalam
-     bingkai Google), kunci ini bekerja di semua HP/tablet.
      ===================================================== */
   (function () {
     var tahan = function () {
