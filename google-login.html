@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Masuk Google - MMG</title>
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<style>
+body{font-family:Arial,sans-serif;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;background:#fff;gap:18px;}
+#info{font-size:13px;color:#555;text-align:center;padding:0 24px;line-height:1.5;}
+#gbtn{min-height:50px;display:flex;align-items:center;justify-content:center;}
+</style>
+</head>
+<body>
+<div id="info">Klik tombol di bawah untuk memilih akun Gmail Anda</div>
+<div id="gbtn">Memuat tombol Google...</div>
+<script>
+const CLIENT_ID = "162735584458-ch9tpn2a0pi7jf6pk9nl7ngqduuhgu1h.apps.googleusercontent.com";
+
+function mulai(){
+  if (!window.google || !google.accounts || !google.accounts.id) { setTimeout(mulai, 300); return; }
+  google.accounts.id.initialize({ client_id: CLIENT_ID, callback: onCredential });
+  google.accounts.id.renderButton(document.getElementById("gbtn"), {
+    theme: "outline", size: "large", text: "signin_with", shape: "rectangular", logo_alignment: "left"
+  });
+  document.getElementById("info").innerText = "Silakan pilih akun Gmail Anda:";
+}
+setTimeout(mulai, 300);
+
+function b64decode(s){
+  s = s.replace(/-/g,"+").replace(/_/g,"/");
+  return decodeURIComponent(atob(s).split("").map(function(c){ return "%"+("00"+c.charCodeAt(0).toString(16)).slice(-2); }).join(""));
+}
+
+function onCredential(resp){
+  try {
+    const payload = JSON.parse(b64decode(resp.credential.split(".")[1]));
+    const data = { source: "mmg-google-login", email: payload.email || "", name: payload.name || "" };
+    if (window.opener) window.opener.postMessage(data, "*");
+    document.getElementById("info").innerHTML = "✅ Berhasil! <b>" + (payload.name || "") + "</b><br>Silakan kembali ke aplikasi...";
+    document.getElementById("gbtn").style.display = "none";
+    setTimeout(function(){ window.close(); }, 1000);
+  } catch(e) {
+    document.getElementById("info").innerText = "Gagal membaca akun: " + e.message;
+  }
+}
+</script>
+</body>
+</html>
