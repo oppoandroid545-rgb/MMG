@@ -9,6 +9,9 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="MENA MENA GROUP">
 <title>MENA MENA GROUP</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
+
 <style>
   /* === POTONGAN BANNER GOOGLE: 0 = TIDAK DIPOTONG === */
   /* Kalau banner Google masih kelihatan, ubah ke 30 atau 40 */
@@ -65,6 +68,70 @@
     border:0;
     background:#fff;
   }
+
+  /* === SCANNER QR DI LEVEL APP.HTML / LUAR IFRAME === */
+  #topScanModal {
+    display:none;
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,.92);
+    z-index:99999999;
+    align-items:center;
+    justify-content:center;
+    padding:16px;
+    box-sizing:border-box;
+  }
+  .top-scan-box {
+    width:100%;
+    max-width:430px;
+    text-align:center;
+    font-family:Arial, sans-serif;
+  }
+  .top-scan-title {
+    color:#fff;
+    font-size:15px;
+    font-weight:bold;
+    margin-bottom:10px;
+  }
+  #topScanVideo {
+    width:100%;
+    max-height:70vh;
+    border-radius:12px;
+    background:#000;
+    border:2px solid #fff;
+    object-fit:cover;
+  }
+  .top-scan-tip {
+    color:rgba(255,255,255,.75);
+    font-size:12px;
+    margin-top:8px;
+    line-height:1.4;
+  }
+  #topScanClose {
+    margin-top:14px;
+    height:42px;
+    padding:0 26px;
+    border:0;
+    border-radius:8px;
+    background:#DC2626;
+    color:#fff;
+    font-size:13px;
+    font-weight:bold;
+    cursor:pointer;
+  }
+  #topScanClose:active { transform:scale(.97); }
+
+  #topScanError {
+    display:none;
+    margin-top:10px;
+    background:#fff;
+    color:#DC2626;
+    border-radius:8px;
+    padding:10px;
+    font-size:13px;
+    line-height:1.5;
+    text-align:left;
+  }
 </style>
 </head>
 <body>
@@ -81,22 +148,34 @@
 <iframe id="frame"
   src="https://script.google.com/macros/s/AKfycbxrcQOZfXduBBgjm3-OnYxYUeo0S2uij75gQr6-6ra8yaV2ua--nl_2l21iZZT7l4Wz/exec"
   onload="document.getElementById('splash').classList.add('hide')"
-  allow="camera; fullscreen">
+  allow="camera *; microphone *; fullscreen *; autoplay *"
+  allowfullscreen
+  webkitallowfullscreen
+  mozallowfullscreen>
 </iframe>
+
+<!-- Modal scanner di luar iframe -->
+<div id="topScanModal">
+  <div class="top-scan-box">
+    <div class="top-scan-title">📷 Arahkan QR KPC ke kamera</div>
+    <video id="topScanVideo" playsinline autoplay muted></video>
+    <div class="top-scan-tip">Pastikan QR jelas, tidak terlalu jauh, dan cukup cahaya.</div>
+    <div id="topScanError"></div>
+    <button id="topScanClose" type="button">TUTUP</button>
+  </div>
+</div>
 
 <script>
   /* =====================================================
-     KUNCI TOMBOL BACK — LEVEL ATAS (100% MANJUR)
+     KUNCI TOMBOL BACK — LEVEL ATAS
      ===================================================== */
   (function () {
     var tahan = function () {
       try { history.pushState(null, document.title, location.href); } catch (e) {}
     };
-    // cadangan 2 lapis
     tahan();
     setTimeout(tahan, 50);
 
-    // setiap back ditekan → isi ulang riwayat → tetap di aplikasi
     window.addEventListener("popstate", function () {
       tahan();
       setTimeout(tahan, 50);
@@ -108,6 +187,125 @@
   setTimeout(function () {
     document.getElementById("splash").classList.add("hide");
   }, 6000);
+
+  /* =====================================================
+     SCANNER QR TOP LEVEL — SOLUSI TABLET / IFRAME
+     - menerima pesan DMS_START_SCAN dari iframe
+     - buka kamera di app.html
+     - kirim hasil balik ke iframe: DMS_KPC_SCAN
+     ===================================================== */
+  var topScanStream = null;
+  var topScanTimer = null;
+
+  function topFrameWin() {
+    var f = document.getElementById("frame");
+    return f && f.contentWindow ? f.contentWindow : null;
+  }
+
+  function kirimKeFrame(data) {
+    try {
+      var w = topFrameWin();
+      if (w) w.postMessage(data, "*");
+    } catch (e) {}
+  }
+
+  function bukaTopScanner() {
+    tutupTopScanner();
+
+    var modal = document.getElementById("topScanModal");
+    var video = document.getElementById("topScanVideo");
+    var errBox = document.getElementById("topScanError");
+
+    errBox.style.display = "none";
+    errBox.innerHTML = "";
+    modal.style.display = "flex";
+
+    // beri tahu iframe bahwa scanner siap, supaya fallback iframe tidak buka tab
+    kirimKeFrame({ type: "DMS_SCAN_READY" });
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      errBox.style.display = "block";
+      errBox.innerHTML = "Browser tidak mendukung kamera.<br>Silakan isi KPC manual.";
+      return;
+    }
+
+    navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1280 },
+        height: { ideal: 720 }
+      },
+      audio: false
+    }).then(function(stream) {
+      topScanStream = stream;
+      video.srcObject = stream;
+
+      try {
+        var p = video.play();
+        if (p && p.catch) p.catch(function(){});
+      } catch (e) {}
+
+      var canvas = document.createElement("canvas");
+      var ctx = canvas.getContext("2d");
+
+      topScanTimer = setInterval(function() {
+        if (!video.videoWidth || video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        var code = null;
+
+        if (typeof jsQR !== "undefined") {
+          code = jsQR(imgData.data, imgData.width, imgData.height);
+        }
+
+        if (code && code.data) {
+          kirimKeFrame({ type: "DMS_KPC_SCAN", text: code.data });
+          tutupTopScanner();
+        }
+      }, 400);
+
+    }).catch(function(err) {
+      errBox.style.display = "block";
+      errBox.innerHTML =
+        "Kamera tidak bisa dibuka:<br><b>" + (err && err.message ? err.message : err) + "</b><br><br>" +
+        "Cek izin kamera Chrome dan izin kamera situs ini.";
+    });
+  }
+
+  function tutupTopScanner() {
+    if (topScanTimer) {
+      clearInterval(topScanTimer);
+      topScanTimer = null;
+    }
+
+    if (topScanStream) {
+      try {
+        topScanStream.getTracks().forEach(function(t) { t.stop(); });
+      } catch (e) {}
+      topScanStream = null;
+    }
+
+    var video = document.getElementById("topScanVideo");
+    if (video) {
+      try { video.pause(); } catch (e) {}
+      video.srcObject = null;
+    }
+
+    var modal = document.getElementById("topScanModal");
+    if (modal) modal.style.display = "none";
+  }
+
+  document.getElementById("topScanClose").onclick = tutupTopScanner;
+
+  window.addEventListener("message", function(ev) {
+    if (ev.data && ev.data.type === "DMS_START_SCAN") {
+      bukaTopScanner();
+    }
+  });
 </script>
 
 </body>
