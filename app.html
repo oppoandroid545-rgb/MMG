@@ -93,9 +93,10 @@
     font-weight:bold;
     margin-bottom:10px;
   }
+  /* ★ VIDEO LEBIH KECIL: tidak tinggi/besar lagi */
   #topScanVideo {
     width:100%;
-    max-height:70vh;
+    max-height:55vh;
     border-radius:12px;
     background:#000;
     border:2px solid #fff;
@@ -193,6 +194,7 @@
      - menerima pesan DMS_START_SCAN dari iframe
      - buka kamera di app.html
      - kirim hasil balik ke iframe: DMS_KPC_SCAN
+     ★ UPGRADE: attemptBoth (baca QR layar) + resolusi 1080p
      ===================================================== */
   var topScanStream = null;
   var topScanTimer = null;
@@ -232,8 +234,8 @@
     navigator.mediaDevices.getUserMedia({
       video: {
         facingMode: { ideal: "environment" },
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
+        width: { ideal: 1920 },   /* ★ RESOLUSI TINGGI */
+        height: { ideal: 1080 }
       },
       audio: false
     }).then(function(stream) {
@@ -259,14 +261,15 @@
         var code = null;
 
         if (typeof jsQR !== "undefined") {
-          code = jsQR(imgData.data, imgData.width, imgData.height);
+          /* ★ attemptBoth: bisa baca QR dari layar (terang/silau/terbalik) */
+          code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
         }
 
         if (code && code.data) {
           kirimKeFrame({ type: "DMS_KPC_SCAN", text: code.data });
           tutupTopScanner();
         }
-      }, 400);
+      }, 350);
 
     }).catch(function(err) {
       errBox.style.display = "block";
