@@ -88,14 +88,38 @@
     font-weight:bold;
     margin-bottom:10px;
   }
+  /* ★ BINGKAI VIDEO */
+  .top-scan-frame {
+    position:relative;
+    width:100%;
+    overflow:hidden;
+    border-radius:12px;
+    background:#000;
+  }
   #topScanVideo {
     width:100%;
     max-height:55vh;
-    border-radius:12px;
-    background:#000;
-    border:2px solid #fff;
+    display:block;
     object-fit:cover;
+    background:#000;
   }
+  /* ★ 4 SUDUT PUTIH + AREA LUAR GELAP (seperti gambar) */
+  .top-scan-overlay {
+    position:absolute; top:0; left:0; right:0; bottom:0;
+    display:flex; align-items:center; justify-content:center;
+    pointer-events:none;
+  }
+  .top-scan-corners {
+    position:relative;
+    width:64%; max-width:300px; aspect-ratio:1/1;
+    background:rgba(255,255,255,.06);
+    box-shadow:0 0 0 9999px rgba(0,0,0,.35);
+  }
+  .top-scan-corners .c { position:absolute; width:34px; height:34px; border:0 solid #fff; }
+  .top-scan-corners .tl { top:0; left:0; border-top-width:5px; border-left-width:5px; }
+  .top-scan-corners .tr { top:0; right:0; border-top-width:5px; border-right-width:5px; }
+  .top-scan-corners .bl { bottom:0; left:0; border-bottom-width:5px; border-left-width:5px; }
+  .top-scan-corners .br { bottom:0; right:0; border-bottom-width:5px; border-right-width:5px; }
   .top-scan-tip {
     color:rgba(255,255,255,.75);
     font-size:12px;
@@ -150,7 +174,14 @@
 <div id="topScanModal">
   <div class="top-scan-box">
     <div class="top-scan-title">📷 Arahkan QR KPC ke kamera</div>
-    <video id="topScanVideo" playsinline autoplay muted></video>
+    <div class="top-scan-frame">
+      <video id="topScanVideo" playsinline autoplay muted></video>
+      <div class="top-scan-overlay">
+        <div class="top-scan-corners">
+          <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
+        </div>
+      </div>
+    </div>
     <div class="top-scan-tip">Pastikan QR jelas, tidak terlalu jauh, dan cukup cahaya.</div>
     <div id="topScanError"></div>
     <button id="topScanClose" type="button">TUTUP</button>
@@ -180,16 +211,12 @@
   }, 6000);
 
   /* =====================================================
-     ★ SCANNER QR — DIKUNCI DENGAN BENAR
-     - simpan ev.source (jendela yang minta scan = dimensi.html)
-     - balas LANGSUNG ke ev.source, bukan ke iframe tengah
-     - attemptBoth + 1080p tetap dipertahankan
+     SCANNER QR TOP LEVEL (balas langsung ke pengirim)
      ===================================================== */
   var topScanStream = null;
   var topScanTimer = null;
-  var scanPeminta = null;  /* ★ jendela yang minta scan (bisa dari iframe mana saja) */
+  var scanPeminta = null;
 
-  /* kirim pesan ke jendela yang MEMINTA scan (ev.source) */
   function balasKePeminta(data) {
     try {
       if (scanPeminta && scanPeminta.postMessage) {
@@ -209,7 +236,6 @@
     errBox.innerHTML = "";
     modal.style.display = "flex";
 
-    /* ★ SIAP: balas LANGSUNG ke yang minta (dimensi.html) */
     balasKePeminta({ type: "DMS_SCAN_READY" });
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
@@ -252,11 +278,10 @@
         }
 
         if (code && code.data) {
-          /* ★ HASIL SCAN: balas LANGSUNG ke dimensi.html */
           balasKePeminta({ type: "DMS_KPC_SCAN", text: code.data });
           tutupTopScanner();
         }
-      }, 300);
+      }, 350);
 
     }).catch(function(err) {
       errBox.style.display = "block";
@@ -291,12 +316,10 @@
 
   document.getElementById("topScanClose").onclick = tutupTopScanner;
 
-  /* ★ PENTING: pakai flag supaya listener tidak ditumpuk */
   if (!window.__dmsScanListenerAdded) {
     window.__dmsScanListenerAdded = true;
     window.addEventListener("message", function(ev) {
       if (ev.data && ev.data.type === "DMS_START_SCAN") {
-        /* ★ SIMPAN ev.source = jendela dimensi.html yang minta scan */
         scanPeminta = ev.source;
         bukaTopScanner();
       }
