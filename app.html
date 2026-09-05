@@ -98,12 +98,30 @@
     object-fit:cover;
     display:block;
   }
+  /* ★ SUDUT PUTIH KEMBALI (4 penjuru) */
   .top-scan-frame {
     position:absolute;
-    left:15%; right:15%; top:18%; bottom:18%;
-    border:2px dashed rgba(255,255,255,.85);
-    border-radius:10px;
+    left:12%; right:12%; top:14%; bottom:14%;
     pointer-events:none;
+  }
+  .top-scan-frame i {
+    position:absolute; width:28px; height:28px;
+    border:4px solid #fff;
+  }
+  .top-scan-frame i:nth-child(1){ left:0; top:0; border-right:0; border-bottom:0; border-radius:6px 0 0 0; }
+  .top-scan-frame i:nth-child(2){ right:0; top:0; border-left:0; border-bottom:0; border-radius:0 6px 0 0; }
+  .top-scan-frame i:nth-child(3){ left:0; bottom:0; border-right:0; border-top:0; border-radius:0 0 0 6px; }
+  .top-scan-frame i:nth-child(4){ right:0; bottom:0; border-left:0; border-top:0; border-radius:0 0 6px 0; }
+
+  #topScanStatus {
+    display:none;
+    margin-top:8px;
+    background:#16A34A;
+    color:#fff;
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:13px;
+    font-weight:bold;
   }
   .top-scan-tip {
     color:rgba(255,255,255,.75);
@@ -161,9 +179,10 @@
     <div class="top-scan-title">📷 Arahkan QR KPC ke kamera</div>
     <div class="top-scan-videowrap">
       <video id="topScanVideo" playsinline autoplay muted></video>
-      <div class="top-scan-frame"></div>
+      <div class="top-scan-frame"><i></i><i></i><i></i><i></i></div>
     </div>
-    <div class="top-scan-tip">Pastikan QR berada DI DALAM bingkai, jelas, dan cukup cahaya.</div>
+    <div id="topScanStatus">✅ QR terbaca! Mengirim...</div>
+    <div class="top-scan-tip">Pastikan QR berada DI DALAM sudut, jelas, dan cukup cahaya.</div>
     <div id="topScanError"></div>
     <button id="topScanClose" type="button">TUTUP</button>
   </div>
@@ -192,10 +211,9 @@
   }, 6000);
 
   /* =====================================================
-     ★ SCANNER QR — DUA MESIN (BarcodeDetector + jsQR)
-     - readyState dilonggarkan (>=2) → semua perangkat jalan
-     - hasil dikirim 2 jalur supaya pasti masuk
+     ★ SCANNER QR — DUA MESIN + TIGA JALUR KIRIM
      ===================================================== */
+  var DMS_APP_URL = "https://script.google.com/macros/s/AKfycbxrcQOZfXduBBgjm3-OnYxYUeo0S2uij75gQr6-6ra8yaV2ua--nl_2l21iZZT7l4Wz/exec";
   var topScanStream = null;
   var topScanTimer = null;
   var topScanDone = false;
@@ -214,27 +232,32 @@
     return f && f.contentWindow ? f.contentWindow : null;
   }
 
-  function kirimKeFrame(data) {
+  /* ★ JALUR 3: relay server (cadangan kalau postMessage gagal) */
+  function simpanRelay(text) {
     try {
-      var w = topFrameWin();
-      if (w) w.postMessage(data, "*");
+      fetch(DMS_APP_URL + "?action=saveScan&text=" + encodeURIComponent(text)).catch(function(){});
     } catch (e) {}
   }
 
   function kirimHasilScan(text) {
     var data = { type: "DMS_KPC_SCAN", text: text };
+    /* JALUR 1: ke jendela peminta */
     try { if (scanPeminta && scanPeminta.postMessage) scanPeminta.postMessage(data, "*"); } catch (e) {}
-    kirimKeFrame(data);
+    /* JALUR 2: ke iframe */
+    try { var w = topFrameWin(); if (w) w.postMessage(data, "*"); } catch (e) {}
+    /* JALUR 3: relay server */
+    simpanRelay(text);
   }
 
   function selesaiScan(text) {
     if (topScanDone || !text) return;
     topScanDone = true;
+    var st = document.getElementById("topScanStatus");
+    if (st) { st.style.display = "block"; st.textContent = "✅ QR terbaca! Mengirim..."; }
     kirimHasilScan(text);
-    tutupTopScanner();
+    setTimeout(function(){ tutupTopScanner(); }, 700);
   }
 
-  /* jsQR: 1) seluruh frame  2) area tengah diperbesar */
   function bacaQR(video) {
     if (typeof jsQR === "undefined") return null;
     if (!canvasFull) {
@@ -271,13 +294,15 @@
     var modal = document.getElementById("topScanModal");
     var video = document.getElementById("topScanVideo");
     var errBox = document.getElementById("topScanError");
+    var st = document.getElementById("topScanStatus");
 
     errBox.style.display = "none";
     errBox.innerHTML = "";
+    if (st) st.style.display = "none";
     modal.style.display = "flex";
 
     try { if (scanPeminta && scanPeminta.postMessage) scanPeminta.postMessage({ type: "DMS_SCAN_READY" }, "*"); } catch (e) {}
-    kirimKeFrame({ type: "DMS_SCAN_READY" });
+    try { var w0 = topFrameWin(); if (w0) w0.postMessage({ type: "DMS_SCAN_READY" }, "*"); } catch (e) {}
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       errBox.style.display = "block";
@@ -309,10 +334,8 @@
 
       topScanTimer = setInterval(function() {
         if (topScanDone) return;
-        /* ★ SYarat dilonggarkan: readyState >= 2 (bukan 4) */
         if (!video.videoWidth || video.readyState < 2) return;
 
-        /* MESIN 1: BarcodeDetector (bawaan Chrome Android — paling kuat) */
         if (bd) {
           try {
             bd.detect(video).then(function(codes) {
@@ -321,7 +344,6 @@
           } catch (e) {}
         }
 
-        /* MESIN 2: jsQR full + zoom */
         var hasil = bacaQR(video);
         if (hasil) selesaiScan(hasil);
       }, 350);
