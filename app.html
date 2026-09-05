@@ -65,53 +65,68 @@
     background:#fff;
   }
 
+  /* ============================== MODAL SCANNER (GAYA BARU) ============================== */
   #topScanModal {
     display:none;
     position:fixed;
     top:0; left:0; right:0; bottom:0;
-    background:rgba(0,0,0,.92);
+    background:rgba(0,0,0,.6);
     z-index:99999999;
     align-items:center;
     justify-content:center;
     padding:16px;
     box-sizing:border-box;
   }
-  .top-scan-box {
+  .top-scan-card {
     width:100%;
     max-width:430px;
-    text-align:center;
+    background:#fff;
+    border-radius:12px;
+    padding:12px;
+    box-sizing:border-box;
     font-family:Arial, sans-serif;
+    box-shadow:0 10px 30px rgba(0,0,0,.35);
   }
-  .top-scan-title {
-    color:#fff;
-    font-size:15px;
-    font-weight:bold;
+  .top-scan-head {
+    display:flex; align-items:center; justify-content:space-between;
     margin-bottom:10px;
   }
-  .top-scan-videowrap { position:relative; }
+  .top-scan-headtitle { font-size:16px; font-weight:bold; color:#1F2937; }
+  .top-scan-x {
+    border:0; background:transparent;
+    font-size:20px; color:#6B7280;
+    cursor:pointer; padding:4px 10px; line-height:1;
+  }
+  .top-scan-x:active { color:#111; }
+
+  .top-scan-videowrap {
+    position:relative;
+    overflow:hidden;
+    border-radius:8px;
+    background:#000;
+  }
   #topScanVideo {
     width:100%;
-    max-height:55vh;
-    border-radius:12px;
-    background:#000;
-    border:2px solid #fff;
-    object-fit:cover;
+    max-height:60vh;
     display:block;
+    object-fit:cover;
+    background:#000;
+    transition:transform .15s;
   }
-  /* ★ SUDUT PUTIH KEMBALI (4 penjuru) */
+  /* 4 sudut putih */
   .top-scan-frame {
     position:absolute;
-    left:12%; right:12%; top:14%; bottom:14%;
+    left:50%; top:50%;
+    width:62%; max-width:300px;
+    aspect-ratio:1/1;
+    transform:translate(-50%,-50%);
     pointer-events:none;
   }
-  .top-scan-frame i {
-    position:absolute; width:28px; height:28px;
-    border:4px solid #fff;
-  }
-  .top-scan-frame i:nth-child(1){ left:0; top:0; border-right:0; border-bottom:0; border-radius:6px 0 0 0; }
-  .top-scan-frame i:nth-child(2){ right:0; top:0; border-left:0; border-bottom:0; border-radius:0 6px 0 0; }
-  .top-scan-frame i:nth-child(3){ left:0; bottom:0; border-right:0; border-top:0; border-radius:0 0 0 6px; }
-  .top-scan-frame i:nth-child(4){ right:0; bottom:0; border-left:0; border-top:0; border-radius:0 0 6px 0; }
+  .top-scan-frame i { position:absolute; width:30px; height:30px; border:0 solid #fff; }
+  .top-scan-frame i:nth-child(1){ left:0; top:0; border-top-width:5px; border-left-width:5px; }
+  .top-scan-frame i:nth-child(2){ right:0; top:0; border-top-width:5px; border-right-width:5px; }
+  .top-scan-frame i:nth-child(3){ left:0; bottom:0; border-bottom-width:5px; border-left-width:5px; }
+  .top-scan-frame i:nth-child(4){ right:0; bottom:0; border-bottom-width:5px; border-right-width:5px; }
 
   #topScanStatus {
     display:none;
@@ -122,31 +137,20 @@
     padding:8px 10px;
     font-size:13px;
     font-weight:bold;
+    text-align:center;
   }
-  .top-scan-tip {
-    color:rgba(255,255,255,.75);
-    font-size:12px;
-    margin-top:8px;
-    line-height:1.4;
+
+  .top-scan-zoomrow {
+    display:flex; align-items:center; gap:10px;
+    margin-top:10px;
   }
-  #topScanClose {
-    margin-top:14px;
-    height:42px;
-    padding:0 26px;
-    border:0;
-    border-radius:8px;
-    background:#DC2626;
-    color:#fff;
-    font-size:13px;
-    font-weight:bold;
-    cursor:pointer;
-  }
-  #topScanClose:active { transform:scale(.97); }
+  #topScanZoom { flex:1; accent-color:#1565C0; }
+  #topScanZoomLbl { font-size:12px; color:#374151; white-space:nowrap; }
 
   #topScanError {
     display:none;
     margin-top:10px;
-    background:#fff;
+    background:#FEE2E2;
     color:#DC2626;
     border-radius:8px;
     padding:10px;
@@ -174,17 +178,23 @@
   mozallowfullscreen>
 </iframe>
 
+<!-- ============================== MODAL SCANNER: ADD KPC ============================== -->
 <div id="topScanModal">
-  <div class="top-scan-box">
-    <div class="top-scan-title">📷 Arahkan QR KPC ke kamera</div>
+  <div class="top-scan-card">
+    <div class="top-scan-head">
+      <div class="top-scan-headtitle">ADD KPC</div>
+      <button type="button" class="top-scan-x" id="topScanClose" title="Tutup">✕</button>
+    </div>
     <div class="top-scan-videowrap">
       <video id="topScanVideo" playsinline autoplay muted></video>
       <div class="top-scan-frame"><i></i><i></i><i></i><i></i></div>
     </div>
     <div id="topScanStatus">✅ QR terbaca! Mengirim...</div>
-    <div class="top-scan-tip">Pastikan QR berada DI DALAM sudut, jelas, dan cukup cahaya.</div>
+    <div class="top-scan-zoomrow">
+      <input type="range" id="topScanZoom" min="1" max="3" step="0.1" value="1">
+      <span id="topScanZoomLbl">1x zoom</span>
+    </div>
     <div id="topScanError"></div>
-    <button id="topScanClose" type="button">TUTUP</button>
   </div>
 </div>
 
@@ -211,7 +221,8 @@
   }, 6000);
 
   /* =====================================================
-     ★ SCANNER QR — DUA MESIN + TIGA JALUR KIRIM
+     SCANNER QR — FUNGSI TIDAK BERUBAH (sudah jalan)
+     Hanya tampilan modal yang baru + zoom slider
      ===================================================== */
   var DMS_APP_URL = "https://script.google.com/macros/s/AKfycbxrcQOZfXduBBgjm3-OnYxYUeo0S2uij75gQr6-6ra8yaV2ua--nl_2l21iZZT7l4Wz/exec";
   var topScanStream = null;
@@ -232,7 +243,6 @@
     return f && f.contentWindow ? f.contentWindow : null;
   }
 
-  /* ★ JALUR 3: relay server (cadangan kalau postMessage gagal) */
   function simpanRelay(text) {
     try {
       fetch(DMS_APP_URL + "?action=saveScan&text=" + encodeURIComponent(text)).catch(function(){});
@@ -241,11 +251,8 @@
 
   function kirimHasilScan(text) {
     var data = { type: "DMS_KPC_SCAN", text: text };
-    /* JALUR 1: ke jendela peminta */
     try { if (scanPeminta && scanPeminta.postMessage) scanPeminta.postMessage(data, "*"); } catch (e) {}
-    /* JALUR 2: ke iframe */
     try { var w = topFrameWin(); if (w) w.postMessage(data, "*"); } catch (e) {}
-    /* JALUR 3: relay server */
     simpanRelay(text);
   }
 
@@ -295,10 +302,15 @@
     var video = document.getElementById("topScanVideo");
     var errBox = document.getElementById("topScanError");
     var st = document.getElementById("topScanStatus");
+    var zoomSlider = document.getElementById("topScanZoom");
+    var zoomLbl = document.getElementById("topScanZoomLbl");
 
     errBox.style.display = "none";
     errBox.innerHTML = "";
     if (st) st.style.display = "none";
+    if (zoomSlider) zoomSlider.value = "1";
+    if (zoomLbl) zoomLbl.textContent = "1x zoom";
+    video.style.transform = "scale(1)";
     modal.style.display = "flex";
 
     try { if (scanPeminta && scanPeminta.postMessage) scanPeminta.postMessage({ type: "DMS_SCAN_READY" }, "*"); } catch (e) {}
@@ -325,6 +337,24 @@
         var p = video.play();
         if (p && p.catch) p.catch(function(){});
       } catch (e) {}
+
+      /* ★ ZOOM SLIDER (visual + kamera bila didukung) */
+      if (zoomSlider) {
+        zoomSlider.oninput = function(){
+          var z = parseFloat(zoomSlider.value) || 1;
+          if (zoomLbl) zoomLbl.textContent = z + "x zoom";
+          try {
+            var track = stream.getVideoTracks()[0];
+            var caps = (track && track.getCapabilities) ? track.getCapabilities() : null;
+            if (caps && typeof caps.zoom !== "undefined") {
+              var zz = Math.min(Math.max(z, caps.zoom.min || 1), caps.zoom.max || z);
+              track.applyConstraints({ advanced: [{ zoom: zz }] }).catch(function(){ video.style.transform = "scale(" + z + ")"; });
+              return;
+            }
+          } catch (e) {}
+          video.style.transform = "scale(" + z + ")";
+        };
+      }
 
       if (!bd && typeof jsQR === "undefined") {
         errBox.style.display = "block";
