@@ -98,7 +98,6 @@
     object-fit:cover;
     display:block;
   }
-  /* ★ BINGKAI PANDUAN: arahkan QR ke dalam kotak ini */
   .top-scan-frame {
     position:absolute;
     left:15%; right:15%; top:18%; bottom:18%;
@@ -193,16 +192,22 @@
   }, 6000);
 
   /* =====================================================
-     ★ SCANNER QR TOP LEVEL — MESIN BACA DIPERKUAT
-     - baca 2 lapis: seluruh gambar + area tengah diperbesar
-     - attemptBoth: QR terang/silau/terbalik tetap terbaca
+     ★ SCANNER QR — DUA MESIN (BarcodeDetector + jsQR)
+     - readyState dilonggarkan (>=2) → semua perangkat jalan
      - hasil dikirim 2 jalur supaya pasti masuk
      ===================================================== */
   var topScanStream = null;
   var topScanTimer = null;
+  var topScanDone = false;
   var scanPeminta = null;
   var canvasFull = null, ctxFull = null;
   var canvasZoom = null, ctxZoom = null;
+  var bd = null;
+  try {
+    if ("BarcodeDetector" in window) {
+      bd = new BarcodeDetector({ formats: ["qr_code"] });
+    }
+  } catch (e) { bd = null; }
 
   function topFrameWin() {
     var f = document.getElementById("frame");
@@ -216,14 +221,20 @@
     } catch (e) {}
   }
 
-  /* ★ kirim hasil lewat 2 jalur: ke peminta (ev.source) + ke iframe */
   function kirimHasilScan(text) {
     var data = { type: "DMS_KPC_SCAN", text: text };
     try { if (scanPeminta && scanPeminta.postMessage) scanPeminta.postMessage(data, "*"); } catch (e) {}
     kirimKeFrame(data);
   }
 
-  /* ★ MESIN BACA: 1) seluruh frame  2) area tengah diperbesar */
+  function selesaiScan(text) {
+    if (topScanDone || !text) return;
+    topScanDone = true;
+    kirimHasilScan(text);
+    tutupTopScanner();
+  }
+
+  /* jsQR: 1) seluruh frame  2) area tengah diperbesar */
   function bacaQR(video) {
     if (typeof jsQR === "undefined") return null;
     if (!canvasFull) {
@@ -234,14 +245,12 @@
     }
     var vw = video.videoWidth, vh = video.videoHeight;
 
-    /* 1) seluruh gambar */
     canvasFull.width = vw; canvasFull.height = vh;
     ctxFull.drawImage(video, 0, 0, vw, vh);
     var img = ctxFull.getImageData(0, 0, vw, vh);
     var code = jsQR(img.data, vw, vh, { inversionAttempts: "attemptBoth" });
     if (code && code.data) return code.data;
 
-    /* 2) area tengah diperbesar (QR kecil jadi terbaca) */
     var sw = Math.max(1, Math.floor(vw * 0.6));
     var sh = Math.max(1, Math.floor(vh * 0.6));
     var sx = Math.floor((vw - sw) / 2);
@@ -257,6 +266,7 @@
 
   function bukaTopScanner() {
     tutupTopScanner();
+    topScanDone = false;
 
     var modal = document.getElementById("topScanModal");
     var video = document.getElementById("topScanVideo");
@@ -266,7 +276,6 @@
     errBox.innerHTML = "";
     modal.style.display = "flex";
 
-    /* beri tahu iframe scanner siap */
     try { if (scanPeminta && scanPeminta.postMessage) scanPeminta.postMessage({ type: "DMS_SCAN_READY" }, "*"); } catch (e) {}
     kirimKeFrame({ type: "DMS_SCAN_READY" });
 
@@ -292,14 +301,30 @@
         if (p && p.catch) p.catch(function(){});
       } catch (e) {}
 
+      if (!bd && typeof jsQR === "undefined") {
+        errBox.style.display = "block";
+        errBox.innerHTML = "Mesin QR tidak termuat. Cek koneksi internet, lalu coba lagi.";
+        return;
+      }
+
       topScanTimer = setInterval(function() {
-        if (!video.videoWidth || video.readyState !== video.HAVE_ENOUGH_DATA) return;
-        var hasil = bacaQR(video);
-        if (hasil) {
-          kirimHasilScan(hasil);
-          tutupTopScanner();
+        if (topScanDone) return;
+        /* ★ SYarat dilonggarkan: readyState >= 2 (bukan 4) */
+        if (!video.videoWidth || video.readyState < 2) return;
+
+        /* MESIN 1: BarcodeDetector (bawaan Chrome Android — paling kuat) */
+        if (bd) {
+          try {
+            bd.detect(video).then(function(codes) {
+              if (codes && codes.length) selesaiScan(codes[0].rawValue);
+            }).catch(function(){});
+          } catch (e) {}
         }
-      }, 400);
+
+        /* MESIN 2: jsQR full + zoom */
+        var hasil = bacaQR(video);
+        if (hasil) selesaiScan(hasil);
+      }, 350);
 
     }).catch(function(err) {
       errBox.style.display = "block";
@@ -336,7 +361,7 @@
 
   window.addEventListener("message", function(ev) {
     if (ev.data && ev.data.type === "DMS_START_SCAN") {
-      scanPeminta = ev.source;   /* ★ ingat siapa yang minta scan */
+      scanPeminta = ev.source;
       bukaTopScanner();
     }
   });
