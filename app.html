@@ -88,38 +88,24 @@
     font-weight:bold;
     margin-bottom:10px;
   }
-  /* ★ BINGKAI VIDEO */
-  .top-scan-frame {
-    position:relative;
-    width:100%;
-    overflow:hidden;
-    border-radius:12px;
-    background:#000;
-  }
+  .top-scan-videowrap { position:relative; }
   #topScanVideo {
     width:100%;
     max-height:55vh;
-    display:block;
-    object-fit:cover;
+    border-radius:12px;
     background:#000;
+    border:2px solid #fff;
+    object-fit:cover;
+    display:block;
   }
-  /* ★ 4 SUDUT PUTIH + AREA LUAR GELAP (seperti gambar) */
-  .top-scan-overlay {
-    position:absolute; top:0; left:0; right:0; bottom:0;
-    display:flex; align-items:center; justify-content:center;
+  /* ★ BINGKAI PANDUAN: arahkan QR ke dalam kotak ini */
+  .top-scan-frame {
+    position:absolute;
+    left:15%; right:15%; top:18%; bottom:18%;
+    border:2px dashed rgba(255,255,255,.85);
+    border-radius:10px;
     pointer-events:none;
   }
-  .top-scan-corners {
-    position:relative;
-    width:64%; max-width:300px; aspect-ratio:1/1;
-    background:rgba(255,255,255,.06);
-    box-shadow:0 0 0 9999px rgba(0,0,0,.35);
-  }
-  .top-scan-corners .c { position:absolute; width:34px; height:34px; border:0 solid #fff; }
-  .top-scan-corners .tl { top:0; left:0; border-top-width:5px; border-left-width:5px; }
-  .top-scan-corners .tr { top:0; right:0; border-top-width:5px; border-right-width:5px; }
-  .top-scan-corners .bl { bottom:0; left:0; border-bottom-width:5px; border-left-width:5px; }
-  .top-scan-corners .br { bottom:0; right:0; border-bottom-width:5px; border-right-width:5px; }
   .top-scan-tip {
     color:rgba(255,255,255,.75);
     font-size:12px;
@@ -174,15 +160,11 @@
 <div id="topScanModal">
   <div class="top-scan-box">
     <div class="top-scan-title">📷 Arahkan QR KPC ke kamera</div>
-    <div class="top-scan-frame">
+    <div class="top-scan-videowrap">
       <video id="topScanVideo" playsinline autoplay muted></video>
-      <div class="top-scan-overlay">
-        <div class="top-scan-corners">
-          <span class="c tl"></span><span class="c tr"></span><span class="c bl"></span><span class="c br"></span>
-        </div>
-      </div>
+      <div class="top-scan-frame"></div>
     </div>
-    <div class="top-scan-tip">Pastikan QR jelas, tidak terlalu jauh, dan cukup cahaya.</div>
+    <div class="top-scan-tip">Pastikan QR berada DI DALAM bingkai, jelas, dan cukup cahaya.</div>
     <div id="topScanError"></div>
     <button id="topScanClose" type="button">TUTUP</button>
   </div>
@@ -211,18 +193,66 @@
   }, 6000);
 
   /* =====================================================
-     SCANNER QR TOP LEVEL (balas langsung ke pengirim)
+     ★ SCANNER QR TOP LEVEL — MESIN BACA DIPERKUAT
+     - baca 2 lapis: seluruh gambar + area tengah diperbesar
+     - attemptBoth: QR terang/silau/terbalik tetap terbaca
+     - hasil dikirim 2 jalur supaya pasti masuk
      ===================================================== */
   var topScanStream = null;
   var topScanTimer = null;
   var scanPeminta = null;
+  var canvasFull = null, ctxFull = null;
+  var canvasZoom = null, ctxZoom = null;
 
-  function balasKePeminta(data) {
+  function topFrameWin() {
+    var f = document.getElementById("frame");
+    return f && f.contentWindow ? f.contentWindow : null;
+  }
+
+  function kirimKeFrame(data) {
     try {
-      if (scanPeminta && scanPeminta.postMessage) {
-        scanPeminta.postMessage(data, "*");
-      }
+      var w = topFrameWin();
+      if (w) w.postMessage(data, "*");
     } catch (e) {}
+  }
+
+  /* ★ kirim hasil lewat 2 jalur: ke peminta (ev.source) + ke iframe */
+  function kirimHasilScan(text) {
+    var data = { type: "DMS_KPC_SCAN", text: text };
+    try { if (scanPeminta && scanPeminta.postMessage) scanPeminta.postMessage(data, "*"); } catch (e) {}
+    kirimKeFrame(data);
+  }
+
+  /* ★ MESIN BACA: 1) seluruh frame  2) area tengah diperbesar */
+  function bacaQR(video) {
+    if (typeof jsQR === "undefined") return null;
+    if (!canvasFull) {
+      canvasFull = document.createElement("canvas");
+      ctxFull = canvasFull.getContext("2d");
+      canvasZoom = document.createElement("canvas");
+      ctxZoom = canvasZoom.getContext("2d");
+    }
+    var vw = video.videoWidth, vh = video.videoHeight;
+
+    /* 1) seluruh gambar */
+    canvasFull.width = vw; canvasFull.height = vh;
+    ctxFull.drawImage(video, 0, 0, vw, vh);
+    var img = ctxFull.getImageData(0, 0, vw, vh);
+    var code = jsQR(img.data, vw, vh, { inversionAttempts: "attemptBoth" });
+    if (code && code.data) return code.data;
+
+    /* 2) area tengah diperbesar (QR kecil jadi terbaca) */
+    var sw = Math.max(1, Math.floor(vw * 0.6));
+    var sh = Math.max(1, Math.floor(vh * 0.6));
+    var sx = Math.floor((vw - sw) / 2);
+    var sy = Math.floor((vh - sh) / 2);
+    canvasZoom.width = vw; canvasZoom.height = vh;
+    ctxZoom.drawImage(video, sx, sy, sw, sh, 0, 0, vw, vh);
+    var img2 = ctxZoom.getImageData(0, 0, vw, vh);
+    var code2 = jsQR(img2.data, vw, vh, { inversionAttempts: "attemptBoth" });
+    if (code2 && code2.data) return code2.data;
+
+    return null;
   }
 
   function bukaTopScanner() {
@@ -236,7 +266,9 @@
     errBox.innerHTML = "";
     modal.style.display = "flex";
 
-    balasKePeminta({ type: "DMS_SCAN_READY" });
+    /* beri tahu iframe scanner siap */
+    try { if (scanPeminta && scanPeminta.postMessage) scanPeminta.postMessage({ type: "DMS_SCAN_READY" }, "*"); } catch (e) {}
+    kirimKeFrame({ type: "DMS_SCAN_READY" });
 
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
       errBox.style.display = "block";
@@ -260,28 +292,14 @@
         if (p && p.catch) p.catch(function(){});
       } catch (e) {}
 
-      var canvas = document.createElement("canvas");
-      var ctx = canvas.getContext("2d");
-
       topScanTimer = setInterval(function() {
         if (!video.videoWidth || video.readyState !== video.HAVE_ENOUGH_DATA) return;
-
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-        var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        var code = null;
-
-        if (typeof jsQR !== "undefined") {
-          code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "attemptBoth" });
-        }
-
-        if (code && code.data) {
-          balasKePeminta({ type: "DMS_KPC_SCAN", text: code.data });
+        var hasil = bacaQR(video);
+        if (hasil) {
+          kirimHasilScan(hasil);
           tutupTopScanner();
         }
-      }, 350);
+      }, 400);
 
     }).catch(function(err) {
       errBox.style.display = "block";
@@ -316,15 +334,12 @@
 
   document.getElementById("topScanClose").onclick = tutupTopScanner;
 
-  if (!window.__dmsScanListenerAdded) {
-    window.__dmsScanListenerAdded = true;
-    window.addEventListener("message", function(ev) {
-      if (ev.data && ev.data.type === "DMS_START_SCAN") {
-        scanPeminta = ev.source;
-        bukaTopScanner();
-      }
-    });
-  }
+  window.addEventListener("message", function(ev) {
+    if (ev.data && ev.data.type === "DMS_START_SCAN") {
+      scanPeminta = ev.source;   /* ★ ingat siapa yang minta scan */
+      bukaTopScanner();
+    }
+  });
 </script>
 
 </body>
