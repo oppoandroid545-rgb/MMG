@@ -65,7 +65,7 @@
     background:#fff;
   }
 
-  /* ============================== MODAL SCANNER (GAYA BARU) ============================== */
+  /* ============================== MODAL SCANNER ============================== */
   #topScanModal {
     display:none;
     position:fixed;
@@ -113,32 +113,17 @@
     background:#000;
     transition:transform .15s;
   }
-  /* 4 sudut putih */
+  /* ★ BINGKAI SUDUT: jarak aman dari tepi → PASTI kelihatan semua */
   .top-scan-frame {
     position:absolute;
-    left:50%; top:50%;
-    width:62%; max-width:300px;
-    aspect-ratio:1/1;
-    transform:translate(-50%,-50%);
+    left:16%; right:16%; top:14%; bottom:14%;
     pointer-events:none;
   }
-  .top-scan-frame i { position:absolute; width:30px; height:30px; border:0 solid #fff; }
+  .top-scan-frame i { position:absolute; width:28px; height:28px; border:0 solid #fff; }
   .top-scan-frame i:nth-child(1){ left:0; top:0; border-top-width:5px; border-left-width:5px; }
   .top-scan-frame i:nth-child(2){ right:0; top:0; border-top-width:5px; border-right-width:5px; }
   .top-scan-frame i:nth-child(3){ left:0; bottom:0; border-bottom-width:5px; border-left-width:5px; }
   .top-scan-frame i:nth-child(4){ right:0; bottom:0; border-bottom-width:5px; border-right-width:5px; }
-
-  #topScanStatus {
-    display:none;
-    margin-top:8px;
-    background:#16A34A;
-    color:#fff;
-    border-radius:8px;
-    padding:8px 10px;
-    font-size:13px;
-    font-weight:bold;
-    text-align:center;
-  }
 
   .top-scan-zoomrow {
     display:flex; align-items:center; gap:10px;
@@ -189,7 +174,6 @@
       <video id="topScanVideo" playsinline autoplay muted></video>
       <div class="top-scan-frame"><i></i><i></i><i></i><i></i></div>
     </div>
-    <div id="topScanStatus">✅ QR terbaca! Mengirim...</div>
     <div class="top-scan-zoomrow">
       <input type="range" id="topScanZoom" min="1" max="3" step="0.1" value="1">
       <span id="topScanZoomLbl">1x zoom</span>
@@ -221,8 +205,7 @@
   }, 6000);
 
   /* =====================================================
-     SCANNER QR — FUNGSI TIDAK BERUBAH (sudah jalan)
-     Hanya tampilan modal yang baru + zoom slider
+     SCANNER QR — TANPA NOTIFIKASI, LANGSUNG TUTUP & ISI
      ===================================================== */
   var DMS_APP_URL = "https://script.google.com/macros/s/AKfycbxrcQOZfXduBBgjm3-OnYxYUeo0S2uij75gQr6-6ra8yaV2ua--nl_2l21iZZT7l4Wz/exec";
   var topScanStream = null;
@@ -256,13 +239,12 @@
     simpanRelay(text);
   }
 
+  /* ★ QR kebaca → langsung kirim + langsung tutup (tanpa notif) */
   function selesaiScan(text) {
     if (topScanDone || !text) return;
     topScanDone = true;
-    var st = document.getElementById("topScanStatus");
-    if (st) { st.style.display = "block"; st.textContent = "✅ QR terbaca! Mengirim..."; }
     kirimHasilScan(text);
-    setTimeout(function(){ tutupTopScanner(); }, 700);
+    tutupTopScanner();
   }
 
   function bacaQR(video) {
@@ -301,13 +283,11 @@
     var modal = document.getElementById("topScanModal");
     var video = document.getElementById("topScanVideo");
     var errBox = document.getElementById("topScanError");
-    var st = document.getElementById("topScanStatus");
     var zoomSlider = document.getElementById("topScanZoom");
     var zoomLbl = document.getElementById("topScanZoomLbl");
 
     errBox.style.display = "none";
     errBox.innerHTML = "";
-    if (st) st.style.display = "none";
     if (zoomSlider) zoomSlider.value = "1";
     if (zoomLbl) zoomLbl.textContent = "1x zoom";
     video.style.transform = "scale(1)";
@@ -338,7 +318,6 @@
         if (p && p.catch) p.catch(function(){});
       } catch (e) {}
 
-      /* ★ ZOOM SLIDER (visual + kamera bila didukung) */
       if (zoomSlider) {
         zoomSlider.oninput = function(){
           var z = parseFloat(zoomSlider.value) || 1;
