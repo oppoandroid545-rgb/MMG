@@ -79,7 +79,7 @@
   }
   .top-scan-card {
     width:100%;
-    max-width:430px;
+    max-width:520px;              /* ★ KARTU LEBIH LEBAR (dulu 430px) */
     background:#fff;
     border-radius:12px;
     padding:12px;
@@ -99,39 +99,39 @@
   }
   .top-scan-x:active { color:#111; }
 
+  /* ★ VIDEO PERSEGI → LEBIH PENDEK (tidak menjulang tinggi) */
   .top-scan-videowrap {
     position:relative;
     overflow:hidden;
     border-radius:8px;
     background:#000;
+    aspect-ratio:1 / 1;
+  }
+  @supports not (aspect-ratio:1 / 1) {
+    .top-scan-videowrap { height:88vw; max-height:480px; }
   }
   #topScanVideo {
     width:100%;
-    max-height:60vh;
+    height:100%;
     display:block;
     object-fit:cover;
     background:#000;
     transition:transform .15s;
   }
 
-  /* ★ BINGKAI SCAN: persegi di tengah, sudut tebal panjang, area dalam terang */
+  /* ★ BINGKAI: persegi di tengah, LEBIH BESAR (80%) → dekat ke tepi video */
   .top-scan-frame {
     position:absolute;
     left:50%; top:50%;
-    width:72%;
-    max-width:360px;
+    width:80%;
     aspect-ratio:1 / 1;
     transform:translate(-50%,-50%);
     background:rgba(255,255,255,.22);
     pointer-events:none;
-    box-shadow: 0 0 0 9999px rgba(0,0,0,.45);
+    box-shadow:0 0 0 9999px rgba(0,0,0,.45);
   }
-  /* fallback untuk browser lama yang tidak support aspect-ratio */
-  @supports not (aspect-ratio: 1 / 1) {
-    .top-scan-frame {
-      height: 72vw;
-      max-height: 360px;
-    }
+  @supports not (aspect-ratio:1 / 1) {
+    .top-scan-frame { height:80%; }
   }
   .top-scan-frame i { position:absolute; width:58px; height:58px; border:0 solid #fff; }
   .top-scan-frame i:nth-child(1){ left:0; top:0; border-top-width:8px; border-left-width:8px; }
