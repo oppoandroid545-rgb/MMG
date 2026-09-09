@@ -113,17 +113,31 @@
     background:#000;
     transition:transform .15s;
   }
-  /* ★ BINGKAI SUDUT: jarak aman dari tepi → PASTI kelihatan semua */
+
+  /* ★ BINGKAI SCAN: persegi di tengah, sudut tebal panjang, area dalam terang */
   .top-scan-frame {
     position:absolute;
-    left:16%; right:16%; top:14%; bottom:14%;
+    left:50%; top:50%;
+    width:72%;
+    max-width:360px;
+    aspect-ratio:1 / 1;
+    transform:translate(-50%,-50%);
+    background:rgba(255,255,255,.22);
     pointer-events:none;
+    box-shadow: 0 0 0 9999px rgba(0,0,0,.45);
   }
-  .top-scan-frame i { position:absolute; width:28px; height:28px; border:0 solid #fff; }
-  .top-scan-frame i:nth-child(1){ left:0; top:0; border-top-width:5px; border-left-width:5px; }
-  .top-scan-frame i:nth-child(2){ right:0; top:0; border-top-width:5px; border-right-width:5px; }
-  .top-scan-frame i:nth-child(3){ left:0; bottom:0; border-bottom-width:5px; border-left-width:5px; }
-  .top-scan-frame i:nth-child(4){ right:0; bottom:0; border-bottom-width:5px; border-right-width:5px; }
+  /* fallback untuk browser lama yang tidak support aspect-ratio */
+  @supports not (aspect-ratio: 1 / 1) {
+    .top-scan-frame {
+      height: 72vw;
+      max-height: 360px;
+    }
+  }
+  .top-scan-frame i { position:absolute; width:58px; height:58px; border:0 solid #fff; }
+  .top-scan-frame i:nth-child(1){ left:0; top:0; border-top-width:8px; border-left-width:8px; }
+  .top-scan-frame i:nth-child(2){ right:0; top:0; border-top-width:8px; border-right-width:8px; }
+  .top-scan-frame i:nth-child(3){ left:0; bottom:0; border-bottom-width:8px; border-left-width:8px; }
+  .top-scan-frame i:nth-child(4){ right:0; bottom:0; border-bottom-width:8px; border-right-width:8px; }
 
   .top-scan-zoomrow {
     display:flex; align-items:center; gap:10px;
