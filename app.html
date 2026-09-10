@@ -119,11 +119,11 @@
     transition:transform .15s;
   }
 
-  /* ★ BINGKAI: diperkecil sedikit (68%) — proporsional, tidak terlalu kecil */
+  /* ★ BINGKAI: lebih kecil lagi (58%) */
   .top-scan-frame {
     position:absolute;
     left:50%; top:50%;
-    width:68%;
+    width:58%;
     aspect-ratio:1 / 1;
     transform:translate(-50%,-50%);
     background:rgba(255,255,255,.22);
@@ -131,14 +131,13 @@
     box-shadow:0 0 0 9999px rgba(0,0,0,.45);
   }
   @supports not (aspect-ratio:1 / 1) {
-    .top-scan-frame { height:68%; }
+    .top-scan-frame { height:58%; }
   }
-  .top-scan-frame i { position:absolute; width:46px; height:46px; border:0 solid #fff; }
-  .top-scan-frame i:nth-child(1){ left:0; top:0; border-top-width:6px; border-left-width:6px; }
-  .top-scan-frame i:nth-child(2){ right:0; top:0; border-top-width:6px; border-right-width:6px; }
-  .top-scan-frame i:nth-child(3){ left:0; bottom:0; border-bottom-width:6px; border-left-width:6px; }
-  .top-scan-frame i:nth-child(4){ right:0; bottom:0; border-bottom-width:6px; border-right-width:6px; }
-
+  .top-scan-frame i { position:absolute; width:40px; height:40px; border:0 solid #fff; }
+  .top-scan-frame i:nth-child(1){ left:0; top:0; border-top-width:5px; border-left-width:5px; }
+  .top-scan-frame i:nth-child(2){ right:0; top:0; border-top-width:5px; border-right-width:5px; }
+  .top-scan-frame i:nth-child(3){ left:0; bottom:0; border-bottom-width:5px; border-left-width:5px; }
+  .top-scan-frame i:nth-child(4){ right:0; bottom:0; border-bottom-width:5px; border-right-width:5px; }
   .top-scan-zoomrow {
     display:flex; align-items:center; gap:10px;
     margin-top:10px;
