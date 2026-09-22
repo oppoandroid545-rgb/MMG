@@ -79,7 +79,7 @@
   }
   .top-scan-card {
     width:100%;
-    max-width:520px;              /* ★ KARTU LEBIH LEBAR (dulu 430px) */
+    max-width:520px;
     background:#fff;
     border-radius:12px;
     padding:12px;
@@ -99,7 +99,6 @@
   }
   .top-scan-x:active { color:#111; }
 
-  /* ★ VIDEO PERSEGI → LEBIH PENDEK (tidak menjulang tinggi) */
   .top-scan-videowrap {
     position:relative;
     overflow:hidden;
@@ -119,11 +118,11 @@
     transition:transform .15s;
   }
 
-  /* ★ BINGKAI: 40% — ukuran lebih kecil, pas untuk scan */
+  /* ★ BINGKAI DIPERBESAR: 75% (sebelumnya 40%) */
   .top-scan-frame {
     position:absolute;
     left:50%; top:50%;
-    width:40%;
+    width:75%;
     aspect-ratio:1 / 1;
     transform:translate(-50%,-50%);
     background:rgba(255,255,255,.04);
@@ -131,13 +130,14 @@
     box-shadow:0 0 0 9999px rgba(0,0,0,.45);
   }
   @supports not (aspect-ratio:1 / 1) {
-    .top-scan-frame { height:40%; }
+    .top-scan-frame { height:75%; }
   }
-  .top-scan-frame i { position:absolute; width:32px; height:32px; border:0 solid #fff; }
-  .top-scan-frame i:nth-child(1){ left:0; top:0; border-top-width:4px; border-left-width:4px; }
-  .top-scan-frame i:nth-child(2){ right:0; top:0; border-top-width:4px; border-right-width:4px; }
-  .top-scan-frame i:nth-child(3){ left:0; bottom:0; border-bottom-width:4px; border-left-width:4px; }
-  .top-scan-frame i:nth-child(4){ right:0; bottom:0; border-bottom-width:4px; border-right-width:4px; }
+  /* ★ SUDUT BINGKAI DIPERBESAR: 44px (sebelumnya 32px), garis 6px */
+  .top-scan-frame i { position:absolute; width:44px; height:44px; border:0 solid #fff; }
+  .top-scan-frame i:nth-child(1){ left:0; top:0; border-top-width:6px; border-left-width:6px; }
+  .top-scan-frame i:nth-child(2){ right:0; top:0; border-top-width:6px; border-right-width:6px; }
+  .top-scan-frame i:nth-child(3){ left:0; bottom:0; border-bottom-width:6px; border-left-width:6px; }
+  .top-scan-frame i:nth-child(4){ right:0; bottom:0; border-bottom-width:6px; border-right-width:6px; }
   .top-scan-zoomrow {
     display:flex; align-items:center; gap:10px;
     margin-top:10px;
@@ -196,9 +196,6 @@
 </div>
 
 <script>
-  /* =====================================================
-     KUNCI TOMBOL BACK — LEVEL ATAS
-     ===================================================== */
   (function () {
     var tahan = function () {
       try { history.pushState(null, document.title, location.href); } catch (e) {}
@@ -217,9 +214,6 @@
     document.getElementById("splash").classList.add("hide");
   }, 6000);
 
-  /* =====================================================
-     SCANNER QR — TANPA NOTIFIKASI, LANGSUNG TUTUP & ISI
-     ===================================================== */
   var DMS_APP_URL = "https://script.google.com/macros/s/AKfycbxrcQOZfXduBBgjm3-OnYxYUeo0S2uij75gQr6-6ra8yaV2ua--nl_2l21iZZT7l4Wz/exec";
   var topScanStream = null;
   var topScanTimer = null;
@@ -252,7 +246,6 @@
     simpanRelay(text);
   }
 
-  /* ★ QR kebaca → langsung kirim + langsung tutup (tanpa notif) */
   function selesaiScan(text) {
     if (topScanDone || !text) return;
     topScanDone = true;
