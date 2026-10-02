@@ -10,149 +10,38 @@
 <meta name="apple-mobile-web-app-title" content="MENA MENA GROUP">
 <title>MENA MENA GROUP</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jsqr/1.4.0/jsQR.min.js"></script>
+<!-- ★ TIDAK ADA jsQR CDN — pakai BarcodeDetector API bawaan browser -->
 
 <style>
   :root { --crop: 0px; }
-
-  html, body {
-    margin:0; padding:0;
-    width:100%; height:100%;
-    background:#1565C0;
-    overflow:hidden;
-  }
-
-  #splash {
-    position:fixed; top:0; left:0; right:0; bottom:0;
-    background:#1565C0;
-    display:flex; flex-direction:column;
-    align-items:center; justify-content:center; gap:14px;
-    z-index:5;
-    transition:opacity .4s;
-  }
+  html, body { margin:0; padding:0; width:100%; height:100%; background:#1565C0; overflow:hidden; }
+  #splash { position:fixed; top:0; left:0; right:0; bottom:0; background:#1565C0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; z-index:5; transition:opacity .4s; }
   #splash.hide { opacity:0; pointer-events:none; }
-  #splash .logo {
-    width:70px; height:70px; border-radius:18px;
-    background:#fff;
-    display:flex; align-items:center; justify-content:center;
-    font-size:34px; font-weight:bold; color:#1565C0;
-    font-family:Arial, sans-serif;
-    box-shadow:0 6px 18px rgba(0,0,0,.25);
-  }
-  #splash .txt {
-    color:#fff; font-family:Arial, sans-serif;
-    font-size:15px; font-weight:bold; letter-spacing:2px;
-  }
-  #splash .sub {
-    color:rgba(255,255,255,.75); font-family:Arial, sans-serif;
-    font-size:11px; letter-spacing:1px; margin-top:-8px;
-  }
-  .spin {
-    width:34px; height:34px;
-    border:4px solid rgba(255,255,255,.3);
-    border-top-color:#fff;
-    border-radius:50%;
-    animation:sp 1s linear infinite;
-  }
+  #splash .logo { width:70px; height:70px; border-radius:18px; background:#fff; display:flex; align-items:center; justify-content:center; font-size:34px; font-weight:bold; color:#1565C0; font-family:Arial,sans-serif; box-shadow:0 6px 18px rgba(0,0,0,.25); }
+  #splash .txt { color:#fff; font-family:Arial,sans-serif; font-size:15px; font-weight:bold; letter-spacing:2px; }
+  #splash .sub { color:rgba(255,255,255,.75); font-family:Arial,sans-serif; font-size:11px; letter-spacing:1px; margin-top:-8px; }
+  .spin { width:34px; height:34px; border:4px solid rgba(255,255,255,.3); border-top-color:#fff; border-radius:50%; animation:sp 1s linear infinite; }
   @keyframes sp { to { transform:rotate(360deg); } }
-
-  #frame {
-    position:absolute;
-    left:0; width:100%;
-    top:calc(-1 * var(--crop));
-    height:calc(100% + var(--crop));
-    border:0;
-    background:#fff;
-  }
-
-  #topScanModal {
-    display:none;
-    position:fixed;
-    top:0; left:0; right:0; bottom:0;
-    background:rgba(0,0,0,.6);
-    z-index:99999999;
-    align-items:center;
-    justify-content:center;
-    padding:16px;
-    box-sizing:border-box;
-  }
-  .top-scan-card {
-    width:100%;
-    max-width:520px;
-    background:#fff;
-    border-radius:12px;
-    padding:12px;
-    box-sizing:border-box;
-    font-family:Arial, sans-serif;
-    box-shadow:0 10px 30px rgba(0,0,0,.35);
-  }
-  .top-scan-head {
-    display:flex; align-items:center; justify-content:space-between;
-    margin-bottom:10px;
-  }
+  #frame { position:absolute; left:0; width:100%; top:calc(-1 * var(--crop)); height:calc(100% + var(--crop)); border:0; background:#fff; }
+  #topScanModal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.6); z-index:99999999; align-items:center; justify-content:center; padding:16px; box-sizing:border-box; }
+  .top-scan-card { width:100%; max-width:520px; background:#fff; border-radius:12px; padding:12px; box-sizing:border-box; font-family:Arial,sans-serif; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+  .top-scan-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
   .top-scan-headtitle { font-size:16px; font-weight:bold; color:#1F2937; }
-  .top-scan-x {
-    border:0; background:transparent;
-    font-size:20px; color:#6B7280;
-    cursor:pointer; padding:4px 10px; line-height:1;
-  }
-  .top-scan-x:active { color:#111; }
-
-  .top-scan-videowrap {
-    position:relative;
-    overflow:hidden;
-    border-radius:8px;
-    background:#000;
-    aspect-ratio:1 / 1;
-  }
-  @supports not (aspect-ratio:1 / 1) {
-    .top-scan-videowrap { height:88vw; max-height:480px; }
-  }
-  #topScanVideo {
-    width:100%;
-    height:100%;
-    display:block;
-    object-fit:cover;
-    background:#000;
-    transition:transform .15s;
-  }
-
-  .top-scan-frame {
-    position:absolute;
-    left:50%; top:50%;
-    width:75%;
-    aspect-ratio:1 / 1;
-    transform:translate(-50%,-50%);
-    background:rgba(255,255,255,.04);
-    pointer-events:none;
-    box-shadow:0 0 0 9999px rgba(0,0,0,.45);
-  }
-  @supports not (aspect-ratio:1 / 1) {
-    .top-scan-frame { height:75%; }
-  }
+  .top-scan-x { border:0; background:transparent; font-size:20px; color:#6B7280; cursor:pointer; padding:4px 10px; line-height:1; }
+  .top-scan-videowrap { position:relative; overflow:hidden; border-radius:8px; background:#000; aspect-ratio:1/1; }
+  @supports not (aspect-ratio:1/1) { .top-scan-videowrap { height:88vw; max-height:480px; } }
+  #topScanVideo { width:100%; height:100%; display:block; object-fit:cover; background:#000; transition:transform .15s; }
+  .top-scan-frame { position:absolute; left:50%; top:50%; width:75%; aspect-ratio:1/1; transform:translate(-50%,-50%); background:rgba(255,255,255,.04); pointer-events:none; box-shadow:0 0 0 9999px rgba(0,0,0,.45); }
+  @supports not (aspect-ratio:1/1) { .top-scan-frame { height:75%; } }
   .top-scan-frame i { position:absolute; width:44px; height:44px; border:0 solid #fff; }
   .top-scan-frame i:nth-child(1){ left:0; top:0; border-top-width:6px; border-left-width:6px; }
   .top-scan-frame i:nth-child(2){ right:0; top:0; border-top-width:6px; border-right-width:6px; }
   .top-scan-frame i:nth-child(3){ left:0; bottom:0; border-bottom-width:6px; border-left-width:6px; }
   .top-scan-frame i:nth-child(4){ right:0; bottom:0; border-bottom-width:6px; border-right-width:6px; }
-  .top-scan-zoomrow {
-    display:flex; align-items:center; gap:10px;
-    margin-top:10px;
-  }
+  .top-scan-zoomrow { display:flex; align-items:center; gap:10px; margin-top:10px; }
   #topScanZoom { flex:1; accent-color:#1565C0; }
   #topScanZoomLbl { font-size:12px; color:#374151; white-space:nowrap; }
-
-  #topScanError {
-    display:none;
-    margin-top:10px;
-    background:#FEE2E2;
-    color:#DC2626;
-    border-radius:8px;
-    padding:10px;
-    font-size:13px;
-    line-height:1.5;
-    text-align:left;
-  }
+  #topScanError { display:none; margin-top:10px; background:#FEE2E2; color:#DC2626; border-radius:8px; padding:10px; font-size:13px; line-height:1.5; text-align:left; }
 </style>
 </head>
 <body>
@@ -164,13 +53,12 @@
   <div class="spin"></div>
 </div>
 
+<!-- ★ URL DEPLOYMENT BARU YANG BENAR -->
 <iframe id="frame"
-  src="https://script.google.com/macros/s/AKfycbxv1XL01lEhzMaI0ATFJ1LtrBhTIj98htSoCIuA0JV-7BwjjPGCTV5bEwmIJx4p4DH3/exec"
+  src="https://script.google.com/macros/s/AKfycbxUAjKCLyRuWW1T8eWWWbm107cuSwGPbbUmEav9leESVoOLWORUqZflBrUI3MM51f8o/exec"
   onload="document.getElementById('splash').classList.add('hide')"
   allow="camera *; microphone *; fullscreen *; autoplay *"
-  allowfullscreen
-  webkitallowfullscreen
-  mozallowfullscreen>
+  allowfullscreen webkitallowfullscreen mozallowfullscreen>
 </iframe>
 
 <div id="topScanModal">
@@ -192,212 +80,56 @@
 </div>
 
 <script>
-  (function () {
-    var tahan = function () {
-      try { history.pushState(null, document.title, location.href); } catch (e) {}
-    };
-    tahan();
-    setTimeout(tahan, 50);
-
-    window.addEventListener("popstate", function () {
-      tahan();
-      setTimeout(tahan, 50);
-    });
-    window.addEventListener("hashchange", function () { tahan(); });
+  (function(){
+    var tahan=function(){ try{ history.pushState(null,document.title,location.href); }catch(e){} };
+    tahan(); setTimeout(tahan,50);
+    window.addEventListener("popstate",function(){ tahan(); setTimeout(tahan,50); });
+    window.addEventListener("hashchange",function(){ tahan(); });
   })();
 
-  setTimeout(function () {
-    document.getElementById("splash").classList.add("hide");
-  }, 6000);
+  setTimeout(function(){ document.getElementById("splash").classList.add("hide"); },6000);
 
-  var DMS_APP_URL = "https://script.google.com/macros/s/AKfycbxv1XL01lEhzMaI0ATFJ1LtrBhTIj98htSoCIuA0JV-7BwjjPGCTV5bEwmIJx4p4DH3/exec";
-  var topScanStream = null;
-  var topScanTimer = null;
-  var topScanDone = false;
-  var scanPeminta = null;
-  var canvasFull = null, ctxFull = null;
-  var canvasZoom = null, ctxZoom = null;
-  var bd = null;
-  try {
-    if ("BarcodeDetector" in window) {
-      bd = new BarcodeDetector({ formats: ["qr_code"] });
-    }
-  } catch (e) { bd = null; }
+  /* ★ URL BARU YANG BENAR */
+  var DMS_APP_URL="https://script.google.com/macros/s/AKfycbxUAjKCLyRuWW1T8eWWWbm107cuSwGPbbUmEav9leESVoOLWORUqZflBrUI3MM51f8o/exec";
+  var topScanStream=null,topScanTimer=null,topScanDone=false,scanPeminta=null;
+  var bd=null;
+  try{ if("BarcodeDetector" in window) bd=new BarcodeDetector({formats:["qr_code"]}); }catch(e){ bd=null; }
 
-  function topFrameWin() {
-    var f = document.getElementById("frame");
-    return f && f.contentWindow ? f.contentWindow : null;
+  function topFrameWin(){ var f=document.getElementById("frame"); return f&&f.contentWindow?f.contentWindow:null; }
+  function simpanRelay(text){ try{ fetch(DMS_APP_URL+"?action=saveScan&text="+encodeURIComponent(text)).catch(function(){}); }catch(e){} }
+  function kirimHasilScan(text){ var data={type:"DMS_KPC_SCAN",text:text}; try{ if(scanPeminta&&scanPeminta.postMessage) scanPeminta.postMessage(data,"*"); }catch(e){} try{ var w=topFrameWin(); if(w) w.postMessage(data,"*"); }catch(e){} simpanRelay(text); }
+  function selesaiScan(text){ if(topScanDone||!text) return; topScanDone=true; kirimHasilScan(text); tutupTopScanner(); }
+
+  function bukaTopScanner(){
+    tutupTopScanner(); topScanDone=false;
+    var modal=document.getElementById("topScanModal"),video=document.getElementById("topScanVideo"),errBox=document.getElementById("topScanError"),zoomSlider=document.getElementById("topScanZoom"),zoomLbl=document.getElementById("topScanZoomLbl");
+    errBox.style.display="none"; errBox.innerHTML="";
+    if(zoomSlider) zoomSlider.value="1"; if(zoomLbl) zoomLbl.textContent="1x zoom";
+    video.style.transform="scale(1)"; modal.style.display="flex";
+    try{ if(scanPeminta&&scanPeminta.postMessage) scanPeminta.postMessage({type:"DMS_SCAN_READY"},"*"); }catch(e){}
+    try{ var w0=topFrameWin(); if(w0) w0.postMessage({type:"DMS_SCAN_READY"},"*"); }catch(e){}
+    if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ errBox.style.display="block"; errBox.innerHTML="Browser tidak mendukung kamera.<br>Isi KPC manual."; return; }
+    navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"},width:{ideal:1920},height:{ideal:1080}},audio:false}).then(function(stream){
+      topScanStream=stream; video.srcObject=stream;
+      try{ var p=video.play(); if(p&&p.catch) p.catch(function(){}); }catch(e){}
+      if(zoomSlider){ zoomSlider.oninput=function(){ var z=parseFloat(zoomSlider.value)||1; if(zoomLbl) zoomLbl.textContent=z+"x zoom"; try{ var track=stream.getVideoTracks()[0]; var caps=(track&&track.getCapabilities)?track.getCapabilities():null; if(caps&&typeof caps.zoom!=="undefined"){ var zz=Math.min(Math.max(z,caps.zoom.min||1),caps.zoom.max||z); track.applyConstraints({advanced:[{zoom:zz}]}).catch(function(){ video.style.transform="scale("+z+")"; }); return; } }catch(e){} video.style.transform="scale("+z+")"; }; }
+      if(!bd){ errBox.style.display="block"; errBox.innerHTML="BarcodeDetector tidak tersedia di browser ini.<br>Isi KPC manual."; return; }
+      topScanTimer=setInterval(function(){
+        if(topScanDone) return; if(!video.videoWidth||video.readyState<2) return;
+        try{ bd.detect(video).then(function(codes){ if(codes&&codes.length) selesaiScan(codes[0].rawValue); }).catch(function(){}); }catch(e){}
+      },350);
+    }).catch(function(err){ errBox.style.display="block"; errBox.innerHTML="Kamera tidak bisa dibuka:<br><b>"+(err&&err.message?err.message:err)+"</b><br><br>Cek izin kamera."; });
   }
 
-  function simpanRelay(text) {
-    try {
-      fetch(DMS_APP_URL + "?action=saveScan&text=" + encodeURIComponent(text)).catch(function(){});
-    } catch (e) {}
+  function tutupTopScanner(){
+    if(topScanTimer){ clearInterval(topScanTimer); topScanTimer=null; }
+    if(topScanStream){ try{ topScanStream.getTracks().forEach(function(t){ t.stop(); }); }catch(e){} topScanStream=null; }
+    var video=document.getElementById("topScanVideo"); if(video){ try{ video.pause(); }catch(e){} video.srcObject=null; }
+    var modal=document.getElementById("topScanModal"); if(modal) modal.style.display="none";
   }
 
-  function kirimHasilScan(text) {
-    var data = { type: "DMS_KPC_SCAN", text: text };
-    try { if (scanPeminta && scanPeminta.postMessage) scanPeminta.postMessage(data, "*"); } catch (e) {}
-    try { var w = topFrameWin(); if (w) w.postMessage(data, "*"); } catch (e) {}
-    simpanRelay(text);
-  }
-
-  function selesaiScan(text) {
-    if (topScanDone || !text) return;
-    topScanDone = true;
-    kirimHasilScan(text);
-    tutupTopScanner();
-  }
-
-  function bacaQR(video) {
-    if (typeof jsQR === "undefined") return null;
-    if (!canvasFull) {
-      canvasFull = document.createElement("canvas");
-      ctxFull = canvasFull.getContext("2d");
-      canvasZoom = document.createElement("canvas");
-      ctxZoom = canvasZoom.getContext("2d");
-    }
-    var vw = video.videoWidth, vh = video.videoHeight;
-
-    canvasFull.width = vw; canvasFull.height = vh;
-    ctxFull.drawImage(video, 0, 0, vw, vh);
-    var img = ctxFull.getImageData(0, 0, vw, vh);
-    var code = jsQR(img.data, vw, vh, { inversionAttempts: "attemptBoth" });
-    if (code && code.data) return code.data;
-
-    var sw = Math.max(1, Math.floor(vw * 0.6));
-    var sh = Math.max(1, Math.floor(vh * 0.6));
-    var sx = Math.floor((vw - sw) / 2);
-    var sy = Math.floor((vh - sh) / 2);
-    canvasZoom.width = vw; canvasZoom.height = vh;
-    ctxZoom.drawImage(video, sx, sy, sw, sh, 0, 0, vw, vh);
-    var img2 = ctxZoom.getImageData(0, 0, vw, vh);
-    var code2 = jsQR(img2.data, vw, vh, { inversionAttempts: "attemptBoth" });
-    if (code2 && code2.data) return code2.data;
-
-    return null;
-  }
-
-  function bukaTopScanner() {
-    tutupTopScanner();
-    topScanDone = false;
-
-    var modal = document.getElementById("topScanModal");
-    var video = document.getElementById("topScanVideo");
-    var errBox = document.getElementById("topScanError");
-    var zoomSlider = document.getElementById("topScanZoom");
-    var zoomLbl = document.getElementById("topScanZoomLbl");
-
-    errBox.style.display = "none";
-    errBox.innerHTML = "";
-    if (zoomSlider) zoomSlider.value = "1";
-    if (zoomLbl) zoomLbl.textContent = "1x zoom";
-    video.style.transform = "scale(1)";
-    modal.style.display = "flex";
-
-    try { if (scanPeminta && scanPeminta.postMessage) scanPeminta.postMessage({ type: "DMS_SCAN_READY" }, "*"); } catch (e) {}
-    try { var w0 = topFrameWin(); if (w0) w0.postMessage({ type: "DMS_SCAN_READY" }, "*"); } catch (e) {}
-
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      errBox.style.display = "block";
-      errBox.innerHTML = "Browser tidak mendukung kamera.<br>Silakan isi KPC manual.";
-      return;
-    }
-
-    navigator.mediaDevices.getUserMedia({
-      video: {
-        facingMode: { ideal: "environment" },
-        width: { ideal: 1920 },
-        height: { ideal: 1080 }
-      },
-      audio: false
-    }).then(function(stream) {
-      topScanStream = stream;
-      video.srcObject = stream;
-
-      try {
-        var p = video.play();
-        if (p && p.catch) p.catch(function(){});
-      } catch (e) {}
-
-      if (zoomSlider) {
-        zoomSlider.oninput = function(){
-          var z = parseFloat(zoomSlider.value) || 1;
-          if (zoomLbl) zoomLbl.textContent = z + "x zoom";
-          try {
-            var track = stream.getVideoTracks()[0];
-            var caps = (track && track.getCapabilities) ? track.getCapabilities() : null;
-            if (caps && typeof caps.zoom !== "undefined") {
-              var zz = Math.min(Math.max(z, caps.zoom.min || 1), caps.zoom.max || z);
-              track.applyConstraints({ advanced: [{ zoom: zz }] }).catch(function(){ video.style.transform = "scale(" + z + ")"; });
-              return;
-            }
-          } catch (e) {}
-          video.style.transform = "scale(" + z + ")";
-        };
-      }
-
-      if (!bd && typeof jsQR === "undefined") {
-        errBox.style.display = "block";
-        errBox.innerHTML = "Mesin QR tidak termuat. Cek koneksi internet, lalu coba lagi.";
-        return;
-      }
-
-      topScanTimer = setInterval(function() {
-        if (topScanDone) return;
-        if (!video.videoWidth || video.readyState < 2) return;
-
-        if (bd) {
-          try {
-            bd.detect(video).then(function(codes) {
-              if (codes && codes.length) selesaiScan(codes[0].rawValue);
-            }).catch(function(){});
-          } catch (e) {}
-        }
-
-        var hasil = bacaQR(video);
-        if (hasil) selesaiScan(hasil);
-      }, 350);
-
-    }).catch(function(err) {
-      errBox.style.display = "block";
-      errBox.innerHTML =
-        "Kamera tidak bisa dibuka:<br><b>" + (err && err.message ? err.message : err) + "</b><br><br>" +
-        "Cek izin kamera Chrome dan izin kamera situs ini.";
-    });
-  }
-
-  function tutupTopScanner() {
-    if (topScanTimer) {
-      clearInterval(topScanTimer);
-      topScanTimer = null;
-    }
-
-    if (topScanStream) {
-      try {
-        topScanStream.getTracks().forEach(function(t) { t.stop(); });
-      } catch (e) {}
-      topScanStream = null;
-    }
-
-    var video = document.getElementById("topScanVideo");
-    if (video) {
-      try { video.pause(); } catch (e) {}
-      video.srcObject = null;
-    }
-
-    var modal = document.getElementById("topScanModal");
-    if (modal) modal.style.display = "none";
-  }
-
-  document.getElementById("topScanClose").onclick = tutupTopScanner;
-
-  window.addEventListener("message", function(ev) {
-    if (ev.data && ev.data.type === "DMS_START_SCAN") {
-      scanPeminta = ev.source;
-      bukaTopScanner();
-    }
-  });
+  document.getElementById("topScanClose").onclick=tutupTopScanner;
+  window.addEventListener("message",function(ev){ if(ev.data&&ev.data.type==="DMS_START_SCAN"){ scanPeminta=ev.source; bukaTopScanner(); } });
 </script>
 
 </body>
