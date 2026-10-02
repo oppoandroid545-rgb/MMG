@@ -22,8 +22,9 @@ iframe{position:fixed;top:0;left:0;width:100%;height:100%;border:0;}
 </head>
 <body>
 
+<!-- ★ URL DEPLOYMENT BARU YANG BENAR -->
 <iframe 
-  src="https://script.google.com/macros/s/AKfycbxv1XL01lEhzMaI0ATFJ1LtrBhTIj98htSoCIuA0JV-7BwjjPGCTV5bEwmIJx4p4DH3/exec"
+  src="https://script.google.com/macros/s/AKfycbxUAjKCLyRuWW1T8eWWWbm107cuSwGPbbUmEav9leESVoOLWORUqZflBrUI3MM51f8o/exec"
   allow="camera"
   allowfullscreen>
 </iframe>
@@ -43,10 +44,11 @@ iframe{position:fixed;top:0;left:0;width:100%;height:100%;border:0;}
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<!-- ★ TIDAK ADA jsQR CDN — pakai BarcodeDetector API bawaan browser -->
 <script>
-let mmgStream=null, mmgRaf=null, mmgLast=0, mmgDone=false, mmgSource=null;
-const mmgCanvas=document.createElement("canvas");
+var mmgStream=null, mmgRaf=null, mmgLast=0, mmgDone=false, mmgSource=null;
+var mmgBD=null;
+try{ if("BarcodeDetector" in window) mmgBD=new BarcodeDetector({formats:["qr_code"]}); }catch(e){ mmgBD=null; }
 
 window.addEventListener("message", function(ev){
   if(!ev.data) return;
@@ -67,9 +69,13 @@ function mmgBukaScan(){
   navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"},audio:false})
   .then(function(stream){
     mmgStream=stream;
-    const v=document.getElementById("mmgVideo");
+    var v=document.getElementById("mmgVideo");
     v.srcObject=stream;
     v.play();
+    if(!mmgBD){
+      document.getElementById("mmgScanTip").textContent="BarcodeDetector tidak tersedia. Isi KPC manual.";
+      return;
+    }
     mmgLoop();
   })
   .catch(function(err){
@@ -79,21 +85,23 @@ function mmgBukaScan(){
 
 function mmgLoop(){
   mmgRaf=requestAnimationFrame(mmgLoop);
-  const now=Date.now();
-  if(now-mmgLast<200 || mmgDone) return;
+  var now=Date.now();
+  if(now-mmgLast<300 || mmgDone) return;
   mmgLast=now;
-  const v=document.getElementById("mmgVideo");
+  var v=document.getElementById("mmgVideo");
   if(!v.videoWidth) return;
-  mmgCanvas.width=v.videoWidth;
-  mmgCanvas.height=v.videoHeight;
-  const ctx=mmgCanvas.getContext("2d");
-  ctx.drawImage(v,0,0,v.videoWidth,v.videoHeight);
-  const code=jsQR(ctx.getImageData(0,0,v.videoWidth,v.videoHeight).data,v.videoWidth,v.videoHeight);
-  if(code&&code.data){ mmgSukses(code.data.trim()); }
+  try{
+    mmgBD.detect(v).then(function(codes){
+      if(codes && codes.length && !mmgDone){
+        mmgSukses(codes[0].rawValue.trim());
+      }
+    }).catch(function(){});
+  }catch(e){}
 }
 
 function mmgSukses(t){
-  if(mmgDone)return; mmgDone=true;
+  if(mmgDone) return;
+  mmgDone=true;
   try{ if(mmgSource){ mmgSource.postMessage({type:"DMS_KPC_SCAN",text:t},"*"); } }catch(e){}
   mmgTutupScan();
 }
